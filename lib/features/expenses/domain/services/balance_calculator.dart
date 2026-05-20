@@ -41,14 +41,28 @@ abstract final class BalanceCalculator {
         balances[uid] = (balances[uid] ?? 0) - share;
       }
 
-      // Remainder goes back to payer (net: payer gains remainder).
-      // Since payer was credited full amount and debited their share,
-      // the remainder is already accounted for. However, the split-among list
-      // may or may not include the payer. Adjust so total is zero:
-      // total debited = share * n + remainder but we only debited share * n,
-      // so debit remainder from payer additionally.
-      balances[expense.paidByUid] =
-          (balances[expense.paidByUid] ?? 0) - remainder;
+      // Remainder: we distributed share*n cents but the expense is
+      // share*n + remainder. The undistributed remainder is absorbed by the
+      // payer so the ledger always sums to zero.
+      //
+      // Case A — payer IS in splitAmong: payer was already debited `share` in
+      // the loop above. We additionally debit `remainder` so their net debit
+      // equals (share + remainder) while every other member is debited exactly
+      // `share`. Total debits = share*(n-1) + (share+remainder) = share*n +
+      // remainder = amount = total credits. Sum = 0. ✓
+      //
+      // Case B — payer is NOT in splitAmong: payer was credited `amount` and
+      // debited nothing. Total debits = share*n = amount - remainder. We debit
+      // `remainder` from payer to balance: payer net = amount - remainder,
+      // split members net = -share each. Sum = (amount - remainder) - share*n =
+      // (amount - remainder) - (amount - remainder) = 0. ✓
+      //
+      // In both cases the remainder is always deducted from the payer. The only
+      // difference is whether the payer also carried a `share` debit.
+      if (remainder != 0) {
+        balances[expense.paidByUid] =
+            (balances[expense.paidByUid] ?? 0) - remainder;
+      }
     }
 
     for (final settlement in settlements) {

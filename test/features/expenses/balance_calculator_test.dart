@@ -178,6 +178,33 @@ void main() {
       expect(sum, 0);
     });
 
+    test('payer NOT in splitAmong with non-divisible amount — sum is zero', () {
+      // alex pays 1000¢ ($10), splitAmong=['bob','carol','dave'] (n=3).
+      // share=333, remainder=1.
+      // alex: credited 1000, then debited remainder(1) → net +999.
+      // bob: -333, carol: -333, dave: -333.
+      // Sum = 999 - 333 - 333 - 333 = 0. ✓
+      // Alex absorbs the rounding cent even though not in splitAmong;
+      // this is the only way the ledger sums to zero.
+      final expense = _expense(
+        id: 'e1',
+        groupId: 'g1',
+        amount: 1000,
+        paidBy: 'alex',
+        splitAmong: ['bob', 'carol', 'dave'],
+      );
+      final result = BalanceCalculator.calculate(
+        expenses: [expense],
+        settlements: [],
+        memberUids: ['alex', 'bob', 'carol', 'dave'],
+      );
+      expect(result['alex'], 999);
+      expect(result['bob'], -333);
+      expect(result['carol'], -333);
+      expect(result['dave'], -333);
+      expect(result.values.fold(0, (s, v) => s + v), 0);
+    });
+
     test('members not in expense splitAmong are unaffected', () {
       // 'd' is a group member but not in the split.
       final expense = _expense(
