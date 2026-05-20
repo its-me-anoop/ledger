@@ -93,6 +93,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Required';
                         if (v.trim().length < 2) return 'At least 2 characters';
+                        if (v.trim().length > 50) return 'At most 50 characters';
                         return null;
                       },
                     ),
@@ -115,7 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        helperText: 'At least 6 characters',
+                        helperText: 'At least 8 characters',
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
@@ -129,7 +130,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Required';
-                        if (v.length < 6) return 'At least 6 characters';
+                        if (v.length < 8) return 'At least 8 characters';
                         return null;
                       },
                     ),

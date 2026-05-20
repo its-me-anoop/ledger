@@ -90,6 +90,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Required';
                       if (v.trim().length < 2) return 'At least 2 characters';
+                      if (v.trim().length > 60) return 'At most 60 characters';
                       return null;
                     },
                   ),

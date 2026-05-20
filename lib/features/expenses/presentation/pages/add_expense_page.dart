@@ -240,7 +240,10 @@ class _AmountField extends StatelessWidget {
           child: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
             style: AppTypography.xxxl(),
             decoration: const InputDecoration(
               hintText: '0',
