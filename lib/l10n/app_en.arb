@@ -1,0 +1,81 @@
+{
+  "@@locale": "en",
+
+  "appName": "Ledger",
+  "@appName": { "description": "The application name" },
+
+  "groupsEmptyTitle": "No groups yet.",
+  "@groupsEmptyTitle": { "description": "Empty state title for groups list" },
+
+  "groupsEmptyBody": "Create one and share the code with your group — everyone joins in seconds.",
+  "@groupsEmptyBody": { "description": "Empty state body for groups list" },
+
+  "groupsEmptyCta": "Create your first group",
+  "@groupsEmptyCta": { "description": "CTA on groups empty state" },
+
+  "expensesEmptyTitle": "No expenses yet.",
+  "@expensesEmptyTitle": { "description": "Empty state title for expenses tab" },
+
+  "expensesEmptyBody": "Tap + to add the first one. Ledger splits it evenly and updates everyone's balance.",
+  "@expensesEmptyBody": { "description": "Empty state body for expenses tab" },
+
+  "activityEmptyTitle": "Quiet so far.",
+  "@activityEmptyTitle": { "description": "Empty state title for activity tab" },
+
+  "activityEmptyBody": "Expenses and settlements appear here as they happen.",
+  "@activityEmptyBody": { "description": "Empty state body for activity tab" },
+
+  "membersEmptyTitle": "Just you for now.",
+  "@membersEmptyTitle": { "description": "Empty state title for members tab with one member" },
+
+  "membersEmptyBody": "Share the group code to invite people. You can find it in group settings.",
+  "@membersEmptyBody": { "description": "Empty state body for members tab" },
+
+  "membersEmptyShareCta": "Share invite code",
+  "@membersEmptyShareCta": { "description": "CTA to share invite code" },
+
+  "settleUpTitle": "Settle up",
+  "@settleUpTitle": { "description": "Title for settle up page" },
+
+  "settleUpOwes": "owes {name}",
+  "@settleUpOwes": {
+    "description": "Who owes whom on settle up page",
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "settleUpDisclaimer": "This will mark all shared expenses between you as settled. Record any outside payment separately.",
+  "@settleUpDisclaimer": { "description": "Disclaimer text on settle up page" },
+
+  "markAsSettled": "Mark as settled",
+  "@markAsSettled": { "description": "Primary button on settle up page" },
+
+  "addExpense": "Add expense",
+  "@addExpense": { "description": "FAB and page title for adding expense" },
+
+  "yourBalance": "Your balance",
+  "@yourBalance": { "description": "Label above balance amount on group detail" },
+
+  "settled": "Settled",
+  "@settled": { "description": "Balance chip label when fully settled" },
+
+  "signOut": "Sign out",
+  "@signOut": { "description": "Sign out button label" },
+
+  "profile": "Profile",
+  "@profile": { "description": "Profile page title and nav label" },
+
+  "settings": "Settings",
+  "@settings": { "description": "Settings page title and nav label" },
+
+  "groups": "Groups",
+  "@groups": { "description": "Groups nav label" },
+
+  "tabExpenses": "Expenses",
+  "@tabExpenses": { "description": "Tab label for expenses" },
+
+  "tabActivity": "Activity",
+  "@tabActivity": { "description": "Tab label for activity feed" },
+
+  "tabMembers": "Members",
+  "@tabMembers": { "description": "Tab label for members list" }
+}

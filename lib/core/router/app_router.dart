@@ -17,6 +17,40 @@ import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/settlements/presentation/pages/settle_up_page.dart';
 
+// Slide-from-right transition guarded by reduced-motion preference.
+// Uses transform + opacity only (never layout properties).
+Page<void> _slidePage(GoRouterState state, Widget child) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      if (MediaQuery.disableAnimationsOf(context)) {
+        return child;
+      }
+      final slide = Tween<Offset>(
+        begin: const Offset(1, 0),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: const Cubic(0.16, 1, 0.3, 1),
+        ),
+      );
+      final fade = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(
+          parent: animation,
+          curve: const Interval(0, 0.4),
+        ),
+      );
+      return SlideTransition(
+        position: slide,
+        child: FadeTransition(opacity: fade, child: child),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 260),
+  );
+}
+
 abstract final class AppRoutes {
   static const splash = '/';
   static const onboarding = '/onboarding';
@@ -58,15 +92,15 @@ GoRouter buildRouter(BuildContext rootContext) {
       ),
       GoRoute(
         path: AppRoutes.onboarding,
-        builder: (ctx, st) => const OnboardingPage(),
+        pageBuilder: (ctx, st) => _slidePage(st, const OnboardingPage()),
       ),
       GoRoute(
         path: AppRoutes.signIn,
-        builder: (ctx, st) => const SignInPage(),
+        pageBuilder: (ctx, st) => _slidePage(st, const SignInPage()),
       ),
       GoRoute(
         path: AppRoutes.register,
-        builder: (ctx, st) => const RegisterPage(),
+        pageBuilder: (ctx, st) => _slidePage(st, const RegisterPage()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _ShellScaffold(shell: shell),
@@ -79,37 +113,44 @@ GoRouter buildRouter(BuildContext rootContext) {
                 routes: [
                   GoRoute(
                     path: 'create',
-                    builder: (ctx, st) => const CreateGroupPage(),
+                    pageBuilder: (ctx, st) => _slidePage(st, const CreateGroupPage()),
                   ),
                   GoRoute(
                     path: 'join',
-                    builder: (ctx, st) => const JoinGroupPage(),
+                    pageBuilder: (ctx, st) => _slidePage(st, const JoinGroupPage()),
                   ),
                   GoRoute(
                     path: ':groupId',
-                    builder: (_, state) => GroupDetailPage(
-                      groupId: state.pathParameters['groupId']!,
+                    pageBuilder: (_, state) => _slidePage(
+                      state,
+                      GroupDetailPage(groupId: state.pathParameters['groupId']!),
                     ),
                     routes: [
                       GoRoute(
                         path: 'add-expense',
-                        builder: (_, state) => AddExpensePage(
-                          groupId: state.pathParameters['groupId']!,
+                        pageBuilder: (_, state) => _slidePage(
+                          state,
+                          AddExpensePage(
+                            groupId: state.pathParameters['groupId']!,
+                          ),
                         ),
                       ),
                       GoRoute(
                         path: 'settle-up',
-                        builder: (_, state) {
+                        pageBuilder: (_, state) {
                           final p = state.pathParameters;
                           final q = state.uri.queryParameters;
-                          return SettleUpPage(
-                            groupId: p['groupId']!,
-                            fromUid: q['fromUid'] ?? '',
-                            toUid: q['toUid'] ?? '',
-                            fromName: q['fromName'] ?? '',
-                            toName: q['toName'] ?? '',
-                            amountCents:
-                                int.tryParse(q['amount'] ?? '0') ?? 0,
+                          return _slidePage(
+                            state,
+                            SettleUpPage(
+                              groupId: p['groupId']!,
+                              fromUid: q['fromUid'] ?? '',
+                              toUid: q['toUid'] ?? '',
+                              fromName: q['fromName'] ?? '',
+                              toName: q['toName'] ?? '',
+                              amountCents:
+                                  int.tryParse(q['amount'] ?? '0') ?? 0,
+                            ),
                           );
                         },
                       ),
@@ -127,7 +168,7 @@ GoRouter buildRouter(BuildContext rootContext) {
                 routes: [
                   GoRoute(
                     path: 'settings',
-                    builder: (ctx, st) => const SettingsPage(),
+                    pageBuilder: (ctx, st) => _slidePage(st, const SettingsPage()),
                   ),
                 ],
               ),
