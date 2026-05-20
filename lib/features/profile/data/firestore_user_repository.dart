@@ -24,16 +24,28 @@ class FirestoreUserRepository implements UserRepository {
   @override
   Future<void> upsertUser(UserProfile profile) async {
     try {
-      await _doc(profile.uid).set(
-        {
-          'displayName': profile.displayName,
-          'email': profile.email,
-          'photoUrl': profile.photoUrl,
-          'createdAt': Timestamp.fromDate(profile.createdAt),
-          'updatedAt': Timestamp.fromDate(profile.updatedAt),
-        },
-        SetOptions(merge: true),
-      );
+      final ref = _doc(profile.uid);
+      await _db.runTransaction((tx) async {
+        final snap = await tx.get(ref);
+        if (snap.exists) {
+          // Doc already exists: only merge mutable fields, never touch createdAt.
+          tx.update(ref, {
+            'displayName': profile.displayName,
+            'email': profile.email,
+            'photoUrl': profile.photoUrl,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          // First time this user is written: set all fields including createdAt.
+          tx.set(ref, {
+            'displayName': profile.displayName,
+            'email': profile.email,
+            'photoUrl': profile.photoUrl,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+      });
     } catch (e) {
       debugPrint('[UserRepo] upsertUser error: $e');
     }

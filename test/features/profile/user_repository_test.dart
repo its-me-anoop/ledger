@@ -12,7 +12,21 @@ class FakeUserRepository implements UserRepository {
 
   @override
   Future<void> upsertUser(UserProfile profile) async {
-    _store[profile.uid] = profile;
+    final existing = _store[profile.uid];
+    if (existing == null) {
+      // First write: store as-is including createdAt.
+      _store[profile.uid] = profile;
+    } else {
+      // Subsequent writes: preserve createdAt, merge only mutable fields.
+      _store[profile.uid] = UserProfile(
+        uid: existing.uid,
+        displayName: profile.displayName,
+        email: profile.email,
+        photoUrl: profile.photoUrl,
+        createdAt: existing.createdAt,
+        updatedAt: profile.updatedAt,
+      );
+    }
   }
 
   @override
@@ -93,7 +107,7 @@ void main() {
       expect(profile?.displayName, 'Bob');
     });
 
-    test('upsert is idempotent — second write wins', () async {
+    test('upsert is idempotent — second write wins for mutable fields', () async {
       final repo = FakeUserRepository();
       const uid = 'uid-3';
       final base = UserProfile(
@@ -109,6 +123,38 @@ void main() {
 
       final profile = await repo.watchUser(uid).first;
       expect(profile?.displayName, 'Caroline');
+    });
+
+    test('upsertUser twice preserves createdAt from first write', () async {
+      final repo = FakeUserRepository();
+      const uid = 'uid-4';
+      final originalCreatedAt = DateTime(2025, 1, 1);
+
+      await repo.upsertUser(UserProfile(
+        uid: uid,
+        displayName: 'Dave',
+        email: 'dave@example.com',
+        photoUrl: null,
+        createdAt: originalCreatedAt,
+        updatedAt: originalCreatedAt,
+      ));
+
+      // Second upsert simulates a subsequent sign-in with a newer timestamp.
+      final laterDate = DateTime(2026, 6, 1);
+      await repo.upsertUser(UserProfile(
+        uid: uid,
+        displayName: 'Dave Updated',
+        email: 'dave@example.com',
+        photoUrl: null,
+        createdAt: laterDate,
+        updatedAt: laterDate,
+      ));
+
+      final profile = await repo.watchUser(uid).first;
+      // Mutable fields updated.
+      expect(profile?.displayName, 'Dave Updated');
+      // createdAt must be the original, not the overwrite value.
+      expect(profile?.createdAt, originalCreatedAt);
     });
   });
 }

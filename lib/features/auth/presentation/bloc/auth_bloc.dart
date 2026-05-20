@@ -92,6 +92,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _upsertUser(AppUser user) async {
+    // createdAt is managed server-side (set only on first write).
+    // We pass DateTime.now() as a placeholder; the repository implementation
+    // ignores it for existing docs and uses FieldValue.serverTimestamp() for
+    // new ones — so no client clock is persisted for createdAt.
     final now = DateTime.now();
     await _userRepository.upsertUser(
       UserProfile(
