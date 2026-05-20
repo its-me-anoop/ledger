@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/auth_repository.dart';
@@ -24,7 +22,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   final AuthRepository _repository;
   final UserRepository _userRepository;
-  StreamSubscription<AppUser?>? _authSubscription;
 
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
     await emit.onEach<AppUser?>(
@@ -109,9 +106,4 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  @override
-  Future<void> close() {
-    _authSubscription?.cancel();
-    return super.close();
-  }
 }
