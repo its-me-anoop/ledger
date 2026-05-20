@@ -7,6 +7,8 @@ import '../../../../app/di.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/models/settlement.dart';
 import '../bloc/settlement_bloc.dart';
 import '../bloc/settlement_event.dart';
@@ -16,7 +18,6 @@ class SettleUpPage extends StatelessWidget {
   const SettleUpPage({
     super.key,
     required this.groupId,
-    required this.fromUid,
     required this.toUid,
     required this.fromName,
     required this.toName,
@@ -24,7 +25,9 @@ class SettleUpPage extends StatelessWidget {
   });
 
   final String groupId;
-  final String fromUid;
+  // fromUid is intentionally absent: it is always derived from the
+  // authenticated user inside _SettleUpView so it cannot be spoofed via
+  // a manipulated route.
   final String toUid;
   final String fromName;
   final String toName;
@@ -36,7 +39,6 @@ class SettleUpPage extends StatelessWidget {
       create: (_) => getIt<SettlementBloc>(),
       child: _SettleUpView(
         groupId: groupId,
-        fromUid: fromUid,
         toUid: toUid,
         fromName: fromName,
         toName: toName,
@@ -49,7 +51,6 @@ class SettleUpPage extends StatelessWidget {
 class _SettleUpView extends StatefulWidget {
   const _SettleUpView({
     required this.groupId,
-    required this.fromUid,
     required this.toUid,
     required this.fromName,
     required this.toName,
@@ -57,7 +58,6 @@ class _SettleUpView extends StatefulWidget {
   });
 
   final String groupId;
-  final String fromUid;
   final String toUid;
   final String fromName;
   final String toName;
@@ -69,6 +69,13 @@ class _SettleUpView extends StatefulWidget {
 
 class _SettleUpViewState extends State<_SettleUpView> {
   static final _currencyFmt = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+
+  String _requireCurrentUid(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) return authState.user.uid;
+    // Should never reach here — router guards unauthenticated access.
+    throw StateError('SettleUpPage reached without an authenticated user');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +99,7 @@ class _SettleUpViewState extends State<_SettleUpView> {
                     Settlement(
                       id: '',
                       groupId: widget.groupId,
-                      fromUid: widget.fromUid,
+                      fromUid: _requireCurrentUid(context),
                       toUid: widget.toUid,
                       amount: widget.amountCents,
                       createdAt: DateTime.now(),
@@ -149,7 +156,7 @@ class _SettleUpViewState extends State<_SettleUpView> {
                         Settlement(
                           id: '',
                           groupId: widget.groupId,
-                          fromUid: widget.fromUid,
+                          fromUid: _requireCurrentUid(context),
                           toUid: widget.toUid,
                           amount: widget.amountCents,
                           createdAt: DateTime.now(),

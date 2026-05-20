@@ -226,9 +226,10 @@ class _DebtRow extends StatelessWidget {
           if (iOwe)
             GestureDetector(
               onTap: () => context.push(
+                // fromUid is intentionally omitted — SettleUpPage always
+                // derives it from the authenticated session.
                 '/groups/${_groupId(context)}/settle-up'
-                '?fromUid=$currentUid'
-                '&toUid=${transfer.toUid}'
+                '?toUid=${transfer.toUid}'
                 '&fromName=You'
                 '&toName=$otherName'
                 '&amount=${transfer.amountCents}',

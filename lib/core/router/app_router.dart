@@ -140,11 +140,12 @@ GoRouter buildRouter(BuildContext rootContext) {
                         pageBuilder: (_, state) {
                           final p = state.pathParameters;
                           final q = state.uri.queryParameters;
+                          // fromUid is intentionally not read from query params;
+                          // SettleUpPage always derives it from AuthBloc.
                           return _slidePage(
                             state,
                             SettleUpPage(
                               groupId: p['groupId']!,
-                              fromUid: q['fromUid'] ?? '',
                               toUid: q['toUid'] ?? '',
                               fromName: q['fromName'] ?? '',
                               toName: q['toName'] ?? '',
