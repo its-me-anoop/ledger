@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/di.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -9,6 +12,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../groups/presentation/widgets/member_avatar.dart';
+import '../../domain/user_repository.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -20,6 +24,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   bool _editing = false;
   late TextEditingController _nameController;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -27,10 +32,34 @@ class _ProfilePageState extends State<ProfilePage> {
     final auth = context.read<AuthBloc>().state;
     final name = auth is Authenticated ? auth.user.displayName : '';
     _nameController = TextEditingController(text: name);
+    _nameController.addListener(_onNameChanged);
+  }
+
+  void _onNameChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 600), _commitName);
+  }
+
+  Future<void> _commitName() async {
+    final auth = context.read<AuthBloc>().state;
+    if (auth is! Authenticated) return;
+    final name = _nameController.text.trim();
+    if (name.isEmpty || name == auth.user.displayName) return;
+
+    final repo = getIt<UserRepository>();
+    await repo.updateDisplayName(auth.user.uid, name);
+  }
+
+  void _onDone() {
+    _debounce?.cancel();
+    _commitName();
+    setState(() => _editing = false);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _nameController.removeListener(_onNameChanged);
     _nameController.dispose();
     super.dispose();
   }
@@ -72,7 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 _editing
                     ? _InlineNameField(
                         controller: _nameController,
-                        onDone: () => setState(() => _editing = false),
+                        onDone: _onDone,
                       )
                     : GestureDetector(
                         onTap: () => setState(() => _editing = true),

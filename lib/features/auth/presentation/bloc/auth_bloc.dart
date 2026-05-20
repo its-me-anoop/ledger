@@ -4,11 +4,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/auth_repository.dart';
 import '../../domain/models/app_user.dart';
+import '../../../../features/profile/domain/models/user_profile.dart';
+import '../../../../features/profile/domain/user_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc(this._repository) : super(const AuthInitial()) {
+  AuthBloc(
+    this._repository, {
+    required UserRepository userRepository,
+  })  : _userRepository = userRepository,
+        super(const AuthInitial()) {
     on<AuthStarted>(_onStarted);
     on<SignInRequested>(_onSignIn);
     on<SignUpRequested>(_onSignUp);
@@ -17,13 +23,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   final AuthRepository _repository;
+  final UserRepository _userRepository;
   StreamSubscription<AppUser?>? _authSubscription;
 
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
     await emit.onEach<AppUser?>(
       _repository.authStateChanges(),
-      onData: (user) {
+      onData: (user) async {
         if (user != null) {
+          await _upsertUser(user);
           emit(Authenticated(user));
         } else {
           emit(const Unauthenticated());
@@ -38,9 +46,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       email: event.email,
       password: event.password,
     );
-    result.when(
-      ok: (user) => emit(Authenticated(user)),
-      err: (failure) => emit(AuthError(failure)),
+    await result.when(
+      ok: (user) async {
+        await _upsertUser(user);
+        emit(Authenticated(user));
+      },
+      err: (failure) async => emit(AuthError(failure)),
     );
   }
 
@@ -51,9 +62,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       password: event.password,
       displayName: event.displayName,
     );
-    result.when(
-      ok: (user) => emit(Authenticated(user)),
-      err: (failure) => emit(AuthError(failure)),
+    await result.when(
+      ok: (user) async {
+        await _upsertUser(user);
+        emit(Authenticated(user));
+      },
+      err: (failure) async => emit(AuthError(failure)),
     );
   }
 
@@ -63,15 +77,32 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     final result = await _repository.signInWithGoogle();
-    result.when(
-      ok: (user) => emit(Authenticated(user)),
-      err: (failure) => emit(AuthError(failure)),
+    await result.when(
+      ok: (user) async {
+        await _upsertUser(user);
+        emit(Authenticated(user));
+      },
+      err: (failure) async => emit(AuthError(failure)),
     );
   }
 
   Future<void> _onSignOut(SignOutRequested event, Emitter<AuthState> emit) async {
     await _repository.signOut();
     emit(const Unauthenticated());
+  }
+
+  Future<void> _upsertUser(AppUser user) async {
+    final now = DateTime.now();
+    await _userRepository.upsertUser(
+      UserProfile(
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        photoUrl: user.photoUrl,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
   }
 
   @override

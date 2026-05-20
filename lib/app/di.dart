@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../features/auth/data/firebase_auth_repository.dart';
 import '../features/auth/domain/auth_repository.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
+import '../features/profile/data/firestore_user_repository.dart';
+import '../features/profile/domain/user_repository.dart';
 import '../features/expenses/data/firestore_expense_repository.dart';
 import '../features/expenses/domain/expense_repository.dart';
 import '../features/expenses/presentation/bloc/expense_bloc.dart';
@@ -54,8 +56,17 @@ void setupDi() {
     () => FirestoreSettlementRepository(firestore: getIt<FirebaseFirestore>()),
   );
 
+  getIt.registerLazySingleton<UserRepository>(
+    () => FirestoreUserRepository(firestore: getIt<FirebaseFirestore>()),
+  );
+
   // Blocs — factories so each page gets a fresh instance.
-  getIt.registerFactory<AuthBloc>(() => AuthBloc(getIt<AuthRepository>()));
+  getIt.registerFactory<AuthBloc>(
+    () => AuthBloc(
+      getIt<AuthRepository>(),
+      userRepository: getIt<UserRepository>(),
+    ),
+  );
   getIt.registerFactory<GroupBloc>(() => GroupBloc(getIt<GroupRepository>()));
   getIt.registerFactory<GroupDetailBloc>(
     () => GroupDetailBloc(getIt<GroupRepository>()),

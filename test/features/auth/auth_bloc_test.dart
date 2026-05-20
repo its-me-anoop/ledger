@@ -8,6 +8,7 @@ import 'package:ledger/features/auth/presentation/bloc/auth_event.dart';
 import 'package:ledger/features/auth/presentation/bloc/auth_state.dart';
 
 import 'fake_auth_repository.dart';
+import 'fake_user_repository.dart';
 
 const _user = AppUser(
   uid: 'uid-1',
@@ -15,23 +16,24 @@ const _user = AppUser(
   displayName: 'Test User',
 );
 
+AuthBloc _bloc([FakeAuthRepository? auth]) => AuthBloc(
+      auth ?? FakeAuthRepository(),
+      userRepository: FakeUserRepository(),
+    );
+
 void main() {
   group('AuthBloc', () {
     group('AuthStarted', () {
       blocTest<AuthBloc, AuthState>(
         'emits Unauthenticated when stream yields null',
-        build: () => AuthBloc(
-          FakeAuthRepository(authStreamValues: [null]),
-        ),
+        build: () => _bloc(FakeAuthRepository(authStreamValues: [null])),
         act: (bloc) => bloc.add(const AuthStarted()),
         expect: () => [const Unauthenticated()],
       );
 
       blocTest<AuthBloc, AuthState>(
         'emits Authenticated when stream yields a user',
-        build: () => AuthBloc(
-          FakeAuthRepository(authStreamValues: [_user]),
-        ),
+        build: () => _bloc(FakeAuthRepository(authStreamValues: [_user])),
         act: (bloc) => bloc.add(const AuthStarted()),
         expect: () => [const Authenticated(_user)],
       );
@@ -40,7 +42,7 @@ void main() {
     group('SignInRequested', () {
       blocTest<AuthBloc, AuthState>(
         'emits [Loading, Authenticated] on success',
-        build: () => AuthBloc(FakeAuthRepository()),
+        build: () => _bloc(),
         act: (bloc) => bloc.add(
           const SignInRequested(email: 'a@b.com', password: 'pass'),
         ),
@@ -49,7 +51,7 @@ void main() {
 
       blocTest<AuthBloc, AuthState>(
         'emits [Loading, AuthError] on failure',
-        build: () => AuthBloc(
+        build: () => _bloc(
           FakeAuthRepository(signInResult: const Err(WrongPassword())),
         ),
         act: (bloc) => bloc.add(
@@ -65,7 +67,7 @@ void main() {
     group('SignUpRequested', () {
       blocTest<AuthBloc, AuthState>(
         'emits [Loading, Authenticated] on success',
-        build: () => AuthBloc(FakeAuthRepository()),
+        build: () => _bloc(),
         act: (bloc) => bloc.add(
           const SignUpRequested(
             email: 'a@b.com',
@@ -80,7 +82,7 @@ void main() {
     group('GoogleSignInRequested', () {
       blocTest<AuthBloc, AuthState>(
         'emits [Loading, Authenticated] on success',
-        build: () => AuthBloc(FakeAuthRepository()),
+        build: () => _bloc(),
         act: (bloc) => bloc.add(const GoogleSignInRequested()),
         expect: () => [const AuthLoading(), const Authenticated(_user)],
       );
@@ -89,7 +91,7 @@ void main() {
     group('SignOutRequested', () {
       blocTest<AuthBloc, AuthState>(
         'emits Unauthenticated after sign out',
-        build: () => AuthBloc(FakeAuthRepository()),
+        build: () => _bloc(),
         seed: () => const Authenticated(_user),
         act: (bloc) => bloc.add(const SignOutRequested()),
         expect: () => [const Unauthenticated()],
