@@ -8,6 +8,7 @@ import '../../features/auth/presentation/pages/onboarding_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/sign_in_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
+import '../../features/expenses/presentation/pages/add_expense_page.dart';
 import '../../features/groups/presentation/pages/create_group_page.dart';
 import '../../features/groups/presentation/pages/group_detail_page.dart';
 import '../../features/groups/presentation/pages/groups_page.dart';
@@ -90,7 +91,7 @@ GoRouter buildRouter(BuildContext rootContext) {
                     routes: [
                       GoRoute(
                         path: 'add-expense',
-                        builder: (_, state) => _AddExpensePlaceholder(
+                        builder: (_, state) => AddExpensePage(
                           groupId: state.pathParameters['groupId']!,
                         ),
                       ),
@@ -120,17 +121,7 @@ GoRouter buildRouter(BuildContext rootContext) {
   );
 }
 
-// Placeholder pages replaced in M7/M8.
-class _AddExpensePlaceholder extends StatelessWidget {
-  const _AddExpensePlaceholder({required this.groupId});
-  final String groupId;
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Add expense')),
-    body: Center(child: Text('Coming in M7 — groupId: $groupId')),
-  );
-}
-
+// Placeholder page replaced in M8.
 class _SettleUpPlaceholder extends StatelessWidget {
   const _SettleUpPlaceholder({required this.groupId});
   final String groupId;

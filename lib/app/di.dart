@@ -6,10 +6,15 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../features/auth/data/firebase_auth_repository.dart';
 import '../features/auth/domain/auth_repository.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
+import '../features/expenses/data/firestore_expense_repository.dart';
+import '../features/expenses/domain/expense_repository.dart';
+import '../features/expenses/presentation/bloc/expense_bloc.dart';
 import '../features/groups/data/firestore_group_repository.dart';
 import '../features/groups/domain/group_repository.dart';
 import '../features/groups/presentation/bloc/group_bloc.dart';
 import '../features/groups/presentation/bloc/group_detail_bloc.dart';
+import '../features/settlements/data/firestore_settlement_repository.dart';
+import '../features/settlements/domain/settlement_repository.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -19,16 +24,21 @@ void setupDi() {
   getIt.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
   getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn());
 
-  // Repositories (eager singletons once first accessed).
+  // Repositories
   getIt.registerLazySingleton<AuthRepository>(
     () => FirebaseAuthRepository(
       firebaseAuth: getIt<FirebaseAuth>(),
       googleSignIn: getIt<GoogleSignIn>(),
     ),
   );
-
   getIt.registerLazySingleton<GroupRepository>(
     () => FirestoreGroupRepository(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerLazySingleton<ExpenseRepository>(
+    () => FirestoreExpenseRepository(firestore: getIt<FirebaseFirestore>()),
+  );
+  getIt.registerLazySingleton<SettlementRepository>(
+    () => FirestoreSettlementRepository(firestore: getIt<FirebaseFirestore>()),
   );
 
   // Blocs — factories so each page gets a fresh instance.
@@ -36,5 +46,11 @@ void setupDi() {
   getIt.registerFactory<GroupBloc>(() => GroupBloc(getIt<GroupRepository>()));
   getIt.registerFactory<GroupDetailBloc>(
     () => GroupDetailBloc(getIt<GroupRepository>()),
+  );
+  getIt.registerFactory<ExpenseBloc>(
+    () => ExpenseBloc(
+      expenseRepository: getIt<ExpenseRepository>(),
+      settlementRepository: getIt<SettlementRepository>(),
+    ),
   );
 }
