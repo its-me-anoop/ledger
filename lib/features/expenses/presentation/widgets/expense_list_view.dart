@@ -2,34 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../app/di.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/expense.dart';
 import '../bloc/expense_bloc.dart';
-import '../bloc/expense_event.dart';
 import '../bloc/expense_state.dart';
 
+/// Reads the nearest [ExpenseBloc] in context. The provider must be placed
+/// by the parent (GroupDetailPage lifts it so the balance strip can share it).
 class ExpenseListView extends StatelessWidget {
-  const ExpenseListView({super.key, required this.groupId});
-
-  final String groupId;
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider<ExpenseBloc>(
-      // Per-tab instance; using factory so each group gets its own bloc.
-      create: (_) => getIt<ExpenseBloc>()..add(LoadExpenses(groupId)),
-      child: _ExpenseList(groupId: groupId),
-    );
-  }
-}
-
-class _ExpenseList extends StatelessWidget {
-  const _ExpenseList({required this.groupId});
-
-  final String groupId;
+  const ExpenseListView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +97,6 @@ class _ExpenseTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date badge
           SizedBox(
             width: 36,
             child: Column(

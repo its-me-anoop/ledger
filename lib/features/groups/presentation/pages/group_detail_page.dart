@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/di.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../expenses/domain/services/debt_simplifier.dart';
+import '../../../expenses/presentation/bloc/expense_bloc.dart';
+import '../../../expenses/presentation/bloc/expense_event.dart';
+import '../../../expenses/presentation/bloc/expense_state.dart';
 import '../../../expenses/presentation/widgets/activity_feed_view.dart';
 import '../../../expenses/presentation/widgets/expense_list_view.dart';
 import '../../domain/models/group.dart';
@@ -14,7 +19,6 @@ import '../bloc/group_detail_bloc.dart';
 import '../bloc/group_detail_event.dart';
 import '../bloc/group_detail_state.dart';
 import '../widgets/member_avatar.dart';
-import '../../../../app/di.dart';
 
 class GroupDetailPage extends StatelessWidget {
   const GroupDetailPage({super.key, required this.groupId});
@@ -64,9 +68,9 @@ class _GroupDetailView extends StatelessWidget {
             ),
           ),
         ),
-        GroupDetailLoaded(:final group) => _LoadedScaffold(
-          group: group,
-          groupId: groupId,
+        GroupDetailLoaded(:final group) => BlocProvider<ExpenseBloc>(
+          create: (_) => getIt<ExpenseBloc>()..add(LoadExpenses(groupId)),
+          child: _LoadedScaffold(group: group, groupId: groupId),
         ),
       },
     );
@@ -103,10 +107,12 @@ class _LoadedScaffold extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _BalanceStrip(group: group, currentUid: currentUid),
+            _DebtRows(group: group, currentUid: currentUid),
             Expanded(
               child: TabBarView(
                 children: [
-                  ExpenseListView(groupId: groupId),
+                  // ExpenseListView reads the ExpenseBloc already in context.
+                  const ExpenseListView(),
                   ActivityFeedView(groupId: groupId),
                   _MembersTab(group: group),
                 ],
@@ -135,9 +141,118 @@ class _BalanceStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Net balance is supplied by ExpenseBloc in M7.
-    // For M6 the strip renders with zero balance (neutral state).
-    return const _BalanceStripContent(netCents: 0);
+    return BlocBuilder<ExpenseBloc, ExpenseState>(
+      builder: (context, state) {
+        final netCents = state is ExpensesLoaded
+            ? (state.netBalances[currentUid] ?? 0)
+            : 0;
+        return _BalanceStripContent(netCents: netCents);
+      },
+    );
+  }
+}
+
+/// Inline list of debt pairs involving [currentUid].
+class _DebtRows extends StatelessWidget {
+  const _DebtRows({required this.group, required this.currentUid});
+
+  final Group group;
+  final String currentUid;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ExpenseBloc, ExpenseState>(
+      builder: (context, state) {
+        if (state is! ExpensesLoaded) return const SizedBox.shrink();
+        final transfers = DebtSimplifier.simplify(state.netBalances)
+            .where((t) => t.fromUid == currentUid || t.toUid == currentUid)
+            .toList();
+        if (transfers.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final t in transfers)
+              _DebtRow(
+                transfer: t,
+                currentUid: currentUid,
+                memberNames: group.memberDisplayNames,
+              ),
+            const SizedBox(height: AppSpacing.s2),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _DebtRow extends StatelessWidget {
+  const _DebtRow({
+    required this.transfer,
+    required this.currentUid,
+    required this.memberNames,
+  });
+
+  final Transfer transfer;
+  final String currentUid;
+  final Map<String, String> memberNames;
+
+  @override
+  Widget build(BuildContext context) {
+    final iOwe = transfer.fromUid == currentUid;
+    final otherUid = iOwe ? transfer.toUid : transfer.fromUid;
+    final otherName = memberNames[otherUid] ?? otherUid;
+    final label = iOwe
+        ? 'You owe $otherName ${_fmt(transfer.amountCents)}'
+        : '$otherName owes you ${_fmt(transfer.amountCents)}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s6,
+        AppSpacing.s1,
+        AppSpacing.s6,
+        0,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.sm(
+                color: iOwe ? AppColors.danger : AppColors.success,
+              ),
+            ),
+          ),
+          if (iOwe)
+            GestureDetector(
+              onTap: () => context.push(
+                '/groups/${_groupId(context)}/settle-up'
+                '?fromUid=$currentUid'
+                '&toUid=${transfer.toUid}'
+                '&fromName=You'
+                '&toName=$otherName'
+                '&amount=${transfer.amountCents}',
+              ),
+              child: Text(
+                'Settle up',
+                style: AppTypography.sm(color: AppColors.primary)
+                    .copyWith(decoration: TextDecoration.underline),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _fmt(int cents) {
+    final dollars = cents ~/ 100;
+    final c = cents % 100;
+    return '\$$dollars.${c.toString().padLeft(2, '0')}';
+  }
+
+  String _groupId(BuildContext context) {
+    // GoRouter gives us the groupId from the path.
+    return GoRouterState.of(context).pathParameters['groupId'] ?? '';
   }
 }
 

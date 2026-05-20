@@ -2,32 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../app/di.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/expense.dart';
 import '../../../settlements/domain/models/settlement.dart';
 import '../bloc/expense_bloc.dart';
-import '../bloc/expense_event.dart';
 import '../bloc/expense_state.dart';
 
+/// Reads the [ExpenseBloc] already in context (provided by GroupDetailPage).
 class ActivityFeedView extends StatelessWidget {
   const ActivityFeedView({super.key, required this.groupId});
 
   final String groupId;
 
   @override
-  Widget build(BuildContext context) {
-    // Reuses the same ExpenseBloc that ExpenseListView provisions —
-    // if one already exists in the tree it will be found; otherwise provide a fresh one.
-    // Using BlocProvider.value here would require ExpenseListView to always be mounted.
-    // Simpler: use a separate bloc instance for this tab. Cost: one extra Firestore listener.
-    return BlocProvider<ExpenseBloc>(
-      create: (_) => getIt<ExpenseBloc>()..add(LoadExpenses(groupId)),
-      child: _ActivityFeed(groupId: groupId),
-    );
-  }
+  Widget build(BuildContext context) => _ActivityFeed(groupId: groupId);
 }
 
 class _ActivityFeed extends StatelessWidget {
