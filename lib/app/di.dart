@@ -9,6 +9,7 @@ import '../features/auth/presentation/bloc/auth_bloc.dart';
 import '../features/groups/data/firestore_group_repository.dart';
 import '../features/groups/domain/group_repository.dart';
 import '../features/groups/presentation/bloc/group_bloc.dart';
+import '../features/groups/presentation/bloc/group_detail_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -33,4 +34,7 @@ void setupDi() {
   // Blocs — factories so each page gets a fresh instance.
   getIt.registerFactory<AuthBloc>(() => AuthBloc(getIt<AuthRepository>()));
   getIt.registerFactory<GroupBloc>(() => GroupBloc(getIt<GroupRepository>()));
+  getIt.registerFactory<GroupDetailBloc>(
+    () => GroupDetailBloc(getIt<GroupRepository>()),
+  );
 }

@@ -87,6 +87,20 @@ GoRouter buildRouter(BuildContext rootContext) {
                     builder: (_, state) => GroupDetailPage(
                       groupId: state.pathParameters['groupId']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'add-expense',
+                        builder: (_, state) => _AddExpensePlaceholder(
+                          groupId: state.pathParameters['groupId']!,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'settle-up',
+                        builder: (_, state) => _SettleUpPlaceholder(
+                          groupId: state.pathParameters['groupId']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -103,6 +117,27 @@ GoRouter buildRouter(BuildContext rootContext) {
         ],
       ),
     ],
+  );
+}
+
+// Placeholder pages replaced in M7/M8.
+class _AddExpensePlaceholder extends StatelessWidget {
+  const _AddExpensePlaceholder({required this.groupId});
+  final String groupId;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Add expense')),
+    body: Center(child: Text('Coming in M7 — groupId: $groupId')),
+  );
+}
+
+class _SettleUpPlaceholder extends StatelessWidget {
+  const _SettleUpPlaceholder({required this.groupId});
+  final String groupId;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Settle up')),
+    body: Center(child: Text('Coming in M8 — groupId: $groupId')),
   );
 }
 
