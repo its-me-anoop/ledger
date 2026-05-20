@@ -14,6 +14,7 @@ import '../../features/groups/presentation/pages/group_detail_page.dart';
 import '../../features/groups/presentation/pages/groups_page.dart';
 import '../../features/groups/presentation/pages/join_group_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/profile/presentation/pages/settings_page.dart';
 import '../../features/settlements/presentation/pages/settle_up_page.dart';
 
 abstract final class AppRoutes {
@@ -28,7 +29,7 @@ abstract final class AppRoutes {
   static const addExpense = '/groups/:groupId/add-expense';
   static const settleUp = '/groups/:groupId/settle-up';
   static const profile = '/profile';
-  static const settings = '/settings';
+  static const settings = '/profile/settings';
 }
 
 GoRouter buildRouter(BuildContext rootContext) {
@@ -123,6 +124,12 @@ GoRouter buildRouter(BuildContext rootContext) {
               GoRoute(
                 path: AppRoutes.profile,
                 builder: (ctx, st) => const ProfilePage(),
+                routes: [
+                  GoRoute(
+                    path: 'settings',
+                    builder: (ctx, st) => const SettingsPage(),
+                  ),
+                ],
               ),
             ],
           ),

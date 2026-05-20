@@ -14,5 +14,6 @@ void main() async {
   }
 
   setupDi();
+  await getIt.allReady();
   runApp(const LedgerApp());
 }
