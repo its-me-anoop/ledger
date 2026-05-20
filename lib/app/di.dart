@@ -14,6 +14,7 @@ import '../features/groups/data/firestore_group_repository.dart';
 import '../features/groups/domain/group_repository.dart';
 import '../features/groups/presentation/bloc/group_bloc.dart';
 import '../features/groups/presentation/bloc/group_detail_bloc.dart';
+import '../features/groups/presentation/bloc/user_balances_bloc.dart';
 import '../features/settlements/data/firestore_settlement_repository.dart';
 import '../core/theme/theme_cubit.dart';
 import '../features/settlements/domain/settlement_repository.dart';
@@ -67,5 +68,8 @@ void setupDi() {
       expenseRepository: getIt<ExpenseRepository>(),
       settlementRepository: getIt<SettlementRepository>(),
     ),
+  );
+  getIt.registerFactory<UserBalancesBloc>(
+    () => UserBalancesBloc(getIt<ExpenseRepository>()),
   );
 }

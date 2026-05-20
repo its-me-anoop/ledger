@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/di.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -12,16 +13,31 @@ import '../../domain/models/group.dart';
 import '../bloc/group_bloc.dart';
 import '../bloc/group_event.dart';
 import '../bloc/group_state.dart';
+import '../bloc/user_balances_bloc.dart';
+import '../bloc/user_balances_event.dart';
+import '../bloc/user_balances_state.dart';
 import '../widgets/member_avatar.dart';
 
-class GroupsPage extends StatefulWidget {
+class GroupsPage extends StatelessWidget {
   const GroupsPage({super.key});
 
   @override
-  State<GroupsPage> createState() => _GroupsPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider<UserBalancesBloc>(
+      create: (_) => getIt<UserBalancesBloc>(),
+      child: const _GroupsPageContent(),
+    );
+  }
 }
 
-class _GroupsPageState extends State<GroupsPage> {
+class _GroupsPageContent extends StatefulWidget {
+  const _GroupsPageContent();
+
+  @override
+  State<_GroupsPageContent> createState() => _GroupsPageContentState();
+}
+
+class _GroupsPageContentState extends State<_GroupsPageContent> {
   bool _fabExpanded = false;
 
   @override
@@ -31,6 +47,15 @@ class _GroupsPageState extends State<GroupsPage> {
     if (authState is Authenticated) {
       context.read<GroupBloc>().add(LoadGroups(uid: authState.user.uid));
     }
+  }
+
+  void _maybeLoadBalances(List<Group> groups) {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! Authenticated) return;
+    final groupIds = groups.map((g) => g.id).toList();
+    context.read<UserBalancesBloc>().add(
+      LoadUserBalances(uid: authState.user.uid, groupIds: groupIds),
+    );
   }
 
   @override
@@ -63,7 +88,11 @@ class _GroupsPageState extends State<GroupsPage> {
         },
         child: Stack(
           children: [
-            BlocBuilder<GroupBloc, GroupState>(
+            BlocConsumer<GroupBloc, GroupState>(
+              listener: (context, state) {
+                final groups = _groupsFrom(state);
+                if (groups.isNotEmpty) _maybeLoadBalances(groups);
+              },
               builder: (context, state) {
                 return switch (state) {
                   GroupsLoading() => const Center(
@@ -111,6 +140,14 @@ class _GroupsPageState extends State<GroupsPage> {
       ),
     );
   }
+
+  List<Group> _groupsFrom(GroupState state) => switch (state) {
+    GroupsLoaded(:final groups) => groups,
+    GroupActionLoading(:final groups) => groups,
+    GroupActionSuccess(:final groups) => groups,
+    GroupsError(:final groups) => groups,
+    _ => const [],
+  };
 }
 
 class _GroupList extends StatelessWidget {
@@ -213,8 +250,7 @@ class _GroupRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Balance chip placeholder — actual balance comes from M7 (ExpenseBloc)
-                const _BalanceChipPlaceholder(),
+                _BalanceChip(groupId: group.id),
                 const SizedBox(width: AppSpacing.s2),
                 const Icon(
                   Icons.chevron_right,
@@ -235,8 +271,62 @@ class _GroupRow extends StatelessWidget {
   }
 }
 
-class _BalanceChipPlaceholder extends StatelessWidget {
-  const _BalanceChipPlaceholder();
+class _BalanceChip extends StatelessWidget {
+  const _BalanceChip({required this.groupId});
+
+  final String groupId;
+
+  static const _threshold = 50; // ±50¢ counts as settled
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<UserBalancesBloc, UserBalancesState>(
+      builder: (context, state) {
+        final netCents = state is UserBalancesLoaded
+            ? (state.netByGroup[groupId] ?? 0)
+            : 0;
+
+        final (label, bgColor, textColor) = _chip(netCents);
+        return _ChipContainer(label: label, bgColor: bgColor, textColor: textColor);
+      },
+    );
+  }
+
+  static (String, Color, Color) _chip(int netCents) {
+    if (netCents.abs() <= _threshold) {
+      return ('Settled', AppColors.surfaceRecessed, AppColors.textMuted);
+    }
+    if (netCents > 0) {
+      return (
+        '+\$${_fmt(netCents)}',
+        AppColors.successDim,
+        AppColors.success,
+      );
+    }
+    return (
+      '-\$${_fmt(netCents.abs())}',
+      AppColors.dangerDim,
+      AppColors.danger,
+    );
+  }
+
+  static String _fmt(int cents) {
+    final d = cents ~/ 100;
+    final c = cents % 100;
+    return '$d.${c.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ChipContainer extends StatelessWidget {
+  const _ChipContainer({
+    required this.label,
+    required this.bgColor,
+    required this.textColor,
+  });
+
+  final String label;
+  final Color bgColor;
+  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -246,12 +336,12 @@ class _BalanceChipPlaceholder extends StatelessWidget {
         vertical: AppSpacing.s1,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surfaceRecessed,
+        color: bgColor,
         borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
-        'Settled',
-        style: AppTypography.sm(color: AppColors.textMuted)
+        label,
+        style: AppTypography.sm(color: textColor)
             .copyWith(fontWeight: FontWeight.w600),
       ),
     );

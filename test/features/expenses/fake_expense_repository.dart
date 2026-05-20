@@ -20,4 +20,11 @@ class FakeExpenseRepository implements ExpenseRepository {
   Future<Result<Expense, ExpenseFailure>> addExpense(Expense expense) async {
     return _addResult ?? Ok(expense);
   }
+
+  @override
+  Stream<Map<String, int>> watchUserNetBalanceByGroup({
+    required String uid,
+    required List<String> groupIds,
+  }) =>
+      Stream.value({for (final id in groupIds) id: 0});
 }

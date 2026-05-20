@@ -38,6 +38,7 @@ class FirestoreSettlementRepository implements SettlementRepository {
         'amount': settlement.amount,
         'createdBy': settlement.fromUid,
         'createdAt': now,
+        'groupId': settlement.groupId,
       });
       return Ok(Settlement(
         id: ref.id,
