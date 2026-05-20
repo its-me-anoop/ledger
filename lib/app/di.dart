@@ -15,6 +15,7 @@ import '../features/groups/presentation/bloc/group_bloc.dart';
 import '../features/groups/presentation/bloc/group_detail_bloc.dart';
 import '../features/settlements/data/firestore_settlement_repository.dart';
 import '../features/settlements/domain/settlement_repository.dart';
+import '../features/settlements/presentation/bloc/settlement_bloc.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -46,6 +47,9 @@ void setupDi() {
   getIt.registerFactory<GroupBloc>(() => GroupBloc(getIt<GroupRepository>()));
   getIt.registerFactory<GroupDetailBloc>(
     () => GroupDetailBloc(getIt<GroupRepository>()),
+  );
+  getIt.registerFactory<SettlementBloc>(
+    () => SettlementBloc(getIt<SettlementRepository>()),
   );
   getIt.registerFactory<ExpenseBloc>(
     () => ExpenseBloc(

@@ -14,6 +14,7 @@ import '../../features/groups/presentation/pages/group_detail_page.dart';
 import '../../features/groups/presentation/pages/groups_page.dart';
 import '../../features/groups/presentation/pages/join_group_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/settlements/presentation/pages/settle_up_page.dart';
 
 abstract final class AppRoutes {
   static const splash = '/';
@@ -97,9 +98,19 @@ GoRouter buildRouter(BuildContext rootContext) {
                       ),
                       GoRoute(
                         path: 'settle-up',
-                        builder: (_, state) => _SettleUpPlaceholder(
-                          groupId: state.pathParameters['groupId']!,
-                        ),
+                        builder: (_, state) {
+                          final p = state.pathParameters;
+                          final q = state.uri.queryParameters;
+                          return SettleUpPage(
+                            groupId: p['groupId']!,
+                            fromUid: q['fromUid'] ?? '',
+                            toUid: q['toUid'] ?? '',
+                            fromName: q['fromName'] ?? '',
+                            toName: q['toName'] ?? '',
+                            amountCents:
+                                int.tryParse(q['amount'] ?? '0') ?? 0,
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -118,17 +129,6 @@ GoRouter buildRouter(BuildContext rootContext) {
         ],
       ),
     ],
-  );
-}
-
-// Placeholder page replaced in M8.
-class _SettleUpPlaceholder extends StatelessWidget {
-  const _SettleUpPlaceholder({required this.groupId});
-  final String groupId;
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Settle up')),
-    body: Center(child: Text('Coming in M8 — groupId: $groupId')),
   );
 }
 
