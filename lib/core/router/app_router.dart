@@ -71,6 +71,12 @@ GoRouter buildRouter(BuildContext rootContext) {
     initialLocation: AppRoutes.splash,
     redirect: (context, state) {
       final authState = rootContext.read<AuthBloc>().state;
+
+      // Do not redirect while auth state is unresolved. Redirecting on
+      // AuthLoading / AuthInitial would bounce the user before Firebase has
+      // replied, causing a flash to the sign-in page on cold start.
+      if (authState is AuthLoading || authState is AuthInitial) return null;
+
       final isAuthenticated = authState is Authenticated;
       final isOnAuthPath = state.matchedLocation == AppRoutes.signIn ||
           state.matchedLocation == AppRoutes.register ||
