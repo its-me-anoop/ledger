@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../core/router/app_router.dart';
+import '../core/theme/app_theme.dart';
+import '../features/auth/presentation/bloc/auth_bloc.dart';
+import '../features/groups/presentation/bloc/group_bloc.dart';
+import 'di.dart';
+
+class LedgerApp extends StatefulWidget {
+  const LedgerApp({super.key});
+
+  @override
+  State<LedgerApp> createState() => _LedgerAppState();
+}
+
+class _LedgerAppState extends State<LedgerApp> {
+  late final AuthBloc _authBloc;
+  late final GroupBloc _groupBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _authBloc = getIt<AuthBloc>();
+    _groupBloc = getIt<GroupBloc>();
+  }
+
+  @override
+  void dispose() {
+    _authBloc.close();
+    _groupBloc.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _authBloc),
+        BlocProvider.value(value: _groupBloc),
+      ],
+      child: Builder(
+        builder: (ctx) {
+          final router = buildRouter(ctx);
+          return MaterialApp.router(
+            title: 'Ledger',
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: ThemeMode.system,
+            routerConfig: router,
+          );
+        },
+      ),
+    );
+  }
+}
