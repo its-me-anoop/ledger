@@ -1,0 +1,138 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    // Returns true when the caller is signed in.
+    function authed() {
+      return request.auth != null;
+    }
+
+    // Returns true when the caller owns the uid slot being accessed.
+    function isSelf(uid) {
+      return authed() && request.auth.uid == uid;
+    }
+
+    // Reads the live group doc and checks membership — used for subcollections.
+    function isMember(groupId) {
+      return authed() &&
+        request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberUids;
+    }
+
+    // Returns the group data from the incoming write's parent path.
+    function groupData(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+
+    // ── users/{uid} ──────────────────────────────────────────────────────────
+
+    // Only the owner may read or write their own profile doc.
+    match /users/{uid} {
+      allow read, write: if isSelf(uid);
+    }
+
+    // ── groups/{groupId} ─────────────────────────────────────────────────────
+
+    match /groups/{groupId} {
+
+      // Any member may read the group doc.
+      allow read: if isMember(groupId);
+
+      // Only the group owner may update metadata fields (name, etc.).
+      // Exception: a non-member may call the join path below.
+      allow update: if authed() && (
+        // Owner updating group metadata.
+        request.auth.uid == resource.data.createdBy
+        ||
+        // A user joining themselves: the only change allowed is an arrayUnion
+        // of their own uid into memberUids, and nothing else may change.
+        (
+          request.auth.uid == request.resource.data.memberUids[
+            request.resource.data.memberUids.size() - 1
+          ] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids']) &&
+          request.resource.data.memberUids.toSet()
+            .difference(resource.data.memberUids.toSet())
+            .hasOnly([request.auth.uid])
+        )
+      );
+
+      // Only authenticated users may create a group doc (owner must be self).
+      allow create: if authed() &&
+        request.auth.uid == request.resource.data.createdBy &&
+        request.resource.data.memberUids.hasOnly([request.auth.uid]);
+
+      // Deletion is disallowed at launch (no cascade delete logic yet).
+      allow delete: if false;
+
+      // ── members sub-collection (display-name cache) ───────────────────────
+
+      // Members can read the member list; only owner or the member themselves may write.
+      match /members/{memberId} {
+        allow read: if isMember(groupId);
+        allow write: if isSelf(memberId) || (
+          authed() && request.auth.uid == groupData(groupId).createdBy
+        );
+      }
+
+      // ── expenses/{expenseId} ─────────────────────────────────────────────
+
+      match /expenses/{expenseId} {
+        // Only group members may read expenses.
+        allow read: if isMember(groupId);
+
+        // Members may create expenses; paidBy must be a current member uid
+        // (not an arbitrary uid — prevents members recording debts for outsiders).
+        allow create: if isMember(groupId) &&
+          request.resource.data.paidBy in groupData(groupId).memberUids &&
+          request.resource.data.amount is int &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.amount <= 100000000 &&  // $1 000 000 cap
+          request.resource.data.description is string &&
+          request.resource.data.description.size() > 0 &&
+          request.resource.data.description.size() <= 200;
+
+        // No one may update or delete existing expense records (immutable ledger).
+        allow update, delete: if false;
+      }
+
+      // ── settlements/{settlementId} ────────────────────────────────────────
+
+      match /settlements/{settlementId} {
+        // Only group members may read settlements.
+        allow read: if isMember(groupId);
+
+        // Only the debtor (fromUid) may record their own settlement.
+        allow create: if isMember(groupId) &&
+          request.auth.uid == request.resource.data.fromUid &&
+          request.resource.data.amount is int &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.amount <= 100000000;
+
+        // Settlements are immutable once written.
+        allow update, delete: if false;
+      }
+    }
+
+    // ── shareCodes/{code} ────────────────────────────────────────────────────
+
+    // Any authenticated user may read a share code doc (required for join lookup).
+    // Only the group owner may create/update/delete them.
+    match /shareCodes/{code} {
+      allow read: if authed();
+      allow create: if authed() &&
+        exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)) &&
+        request.auth.uid == get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.createdBy;
+      allow update, delete: if authed() &&
+        request.auth.uid == get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.createdBy;
+    }
+
+    // ── collectionGroup indexes (expenses & settlements) ─────────────────────
+    // Firestore collectionGroup queries are governed by the subcollection rules
+    // above (isMember check), which already require the caller to be a member of
+    // the parent group. No additional top-level rule is needed; the subcollection
+    // rules are evaluated per document during a collectionGroup query.
+  }
+}
