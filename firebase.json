@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"baby-journal-7e061","appId":"1:494116892350:android:135c12b666e0513887f8ef","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"baby-journal-7e061","appId":"1:494116892350:ios:75448ca105a680d987f8ef","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"baby-journal-7e061","configurations":{"android":"1:494116892350:android:135c12b666e0513887f8ef","ios":"1:494116892350:ios:75448ca105a680d987f8ef"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "baby-journal-7e061",
+          "appId": "1:494116892350:android:135c12b666e0513887f8ef",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "baby-journal-7e061",
+          "appId": "1:494116892350:ios:75448ca105a680d987f8ef",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "baby-journal-7e061",
+          "configurations": {
+            "android": "1:494116892350:android:135c12b666e0513887f8ef",
+            "ios": "1:494116892350:ios:75448ca105a680d987f8ef"
+          }
+        }
+      }
+    }
+  }
+}
